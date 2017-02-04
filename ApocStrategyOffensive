@@ -1,4 +1,13 @@
-module ApocStrategyOffensinve where
+{- 
+Module     : ApocStrategyOPffensive
+Description: Aggressively styled AI
+
+The aggressive strategy is always looking to capture enemy pieces, regardless of whether
+the play is intelligent or not. It searches the game board to find any possible capture 
+and takes it. 
+-}
+
+module ApocStrategyOffensive where
 
 import Control.Monad.Trans.State.Lazy
 import Data.Maybe (fromJust, isNothing)
@@ -7,7 +16,8 @@ import Data.Char
 import ApocTools
 import MoreApocTools
 
-
+-- | The offensive chooser function. It takes in the board state
+-- and takes the most aggressive play
 offensive :: Chooser
 
 offensive gameState Normal player
@@ -31,7 +41,10 @@ offensive gameState PawnPlacement player =
   else return Nothing
      
      
-
+{---------Movement options---------}
+     
+-- | Takes in the board state and initial coordinates and returns a list of 
+-- the optimal moves that will capture a piece
 killPlay :: Board -> [(Int, Int)] -> [(Int, Int), (Int, Int,)]
 killPlay b [] = []
 killPlay b (p:ps) | (idealKillPieceothing) = (killPlay b ps)
@@ -41,15 +54,19 @@ killPlay b (p:ps) | (idealKillPieceothing) = (killPlay b ps)
                         idealKill = choosePlay (capture b possibleKills) 0.5
                         idealKillPiece | (idealKill == Nothing) = Nothing
                                        | otherwise = Just $ typeOf (pieceOf (getFromBoard b (fromJust idealKill)))
-                                       
-                                       
+                           
+                           
+                           
+-- | Puts a list of captures available in order of importance (Knight over Pawn)
 capture :: Board -> [(Int, Int)] -> [(Int, Int)]
 capture board [] = []
 capture board (k:ks) | (piece == Knight) = [k] ++ (capture board ks)
                      | (piece == Pawn) = (capture board ks) ++ [k]
                      where piece = typeOf (pieceOf (getFromBoard board k))
                      
-                     
+         
+-- | Takes in the board state and initial coordinates and returns a list of 
+-- the optimal moves that will not capture a piece       
 noKillPlay :: Board -> [(Int, Int)] -> [(Int, Int), (Int, Int,)]
 nokillPlay b [] = []
 nokillPlay b (p:ps) | (best == Nothing) = (noKillPlay b ps)
@@ -57,6 +74,7 @@ nokillPlay b (p:ps) | (best == Nothing) = (noKillPlay b ps)
                     where movesList = notKills b p
                           best = choosePlay (noCapture b moves) 0.5
                           
-                          
+--| Simply a placeholder method because this strategy only tries to capture pieces
+-- so there is no need to order the non-capture moves, simply pick one and continue
 noKill :: Board -> [(Int, Int)] -> [(Int, Int)]
 noKill b ps = ps
