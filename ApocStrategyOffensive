@@ -1,0 +1,62 @@
+module ApocStrategyOffensinve where
+
+import Control.Monad.Trans.State.Lazy
+import Data.Maybe (fromJust, isNothing)
+import System.Environment
+import Data.Char
+import ApocTools
+import MoreApocTools
+
+
+offensive :: Chooser
+
+offensive gameState Normal player
+     let board = theBoard gameState in 
+     let captureKnight = (killPlay board (knightPieces board player Knight)) in
+     let capturePawn = (killPlay board (pawnPieces board player Pawn)) in
+     let noCapture = (noKillPlay board (pieces board player)) in
+     let actualMove = choosePLay (captureKnight ++ capturePawn ++ noCapture) 0.5 in
+     
+     if actualMove /= Nothing then
+       return $ Just [(fromJust actualMove)]
+     else return Nothing
+     
+     
+offensive gameState PawnPlacement player =
+  let emptyPlaces = pieces (theBoard gameState) E 0 0 0 1 4 3 in
+  let move = choose emptyPlaces in
+  
+  if actualMove /= Nothing then
+    return $ Just [(fromJust actualMove)]
+  else return Nothing
+     
+     
+
+killPlay :: Board -> [(Int, Int)] -> [(Int, Int), (Int, Int,)]
+killPlay b [] = []
+killPlay b (p:ps) | (idealKillPieceothing) = (killPlay b ps)
+                  | (fromJust idealKillPiece Knight) = [(p, fromJust idealKill)] ++ killPlay b ps
+                  | (fromJust idealKillPiece Pawn) = killPlay b ps + [(p, fromJust idealKill)]
+                  where possibleKills = totalKills b p
+                        idealKill = choosePlay (capture b possibleKills) 0.5
+                        idealKillPiece | (idealKill == Nothing) = Nothing
+                                       | otherwise = Just $ typeOf (pieceOf (getFromBoard b (fromJust idealKill)))
+                                       
+                                       
+capture :: Board -> [(Int, Int)] -> [(Int, Int)]
+capture board [] = []
+capture board (k:ks) | (piece == Knight) = [k] ++ (capture board ks)
+                     | (piece == Pawn) = (capture board ks) ++ [k]
+                     where piece = typeOf (pieceOf (getFromBoard board k))
+                     
+                     
+noKillPlay :: Board -> [(Int, Int)] -> [(Int, Int), (Int, Int,)]
+nokillPlay b [] = []
+nokillPlay b (p:ps) | (best == Nothing) = (noKillPlay b ps)
+                    | otherwise = (p, fromJust best) : (noKillPlay b ps)
+                    where movesList = notKills b p
+                          best = choosePlay (noCapture b moves) 0.5
+                          
+                          
+noKill :: Board -> [(Int, Int)] -> [(Int, Int)]
+noKill b ps = ps
