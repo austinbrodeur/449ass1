@@ -4,7 +4,8 @@ Description: Aggressively styled AI
 
 The aggressive strategy is always looking to capture enemy pieces, regardless of whether
 the play is intelligent or not. It searches the game board to find any possible capture 
-and takes it. 
+and takes it. If it finds no plays which will capture a piece, it simply makes the first non-
+capture move calculated. 
 -}
 
 module ApocStrategyOffensive where
