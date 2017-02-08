@@ -1,11 +1,11 @@
 {- 
-Module     : ApocStrategyOPffensive
+Module     : ApocStrategyOffensive
 Description: Aggressively styled AI
 
 The aggressive strategy is always looking to capture enemy pieces, regardless of whether
 the play is intelligent or not. It searches the game board to find any possible capture 
 and takes it. If it finds no plays which will capture a piece, it simply makes the first non-
-capture move calculated. 
+capture move calculated, as the noKill method is essentially a placeholder.
 -}
 
 module ApocStrategyOffensive where
@@ -26,7 +26,7 @@ offensive gameState Normal player
      let captureKnight = (killPlay board (knightPieces board player Knight)) in
      let capturePawn = (killPlay board (pawnPieces board player Pawn)) in
      let noCapture = (noKillPlay board (pieces board player)) in
-     let actualMove = choosePLay (captureKnight ++ capturePawn ++ noCapture) 0.5 in
+     let actualMove = choosePlay (captureKnight ++ capturePawn ++ noCapture) 0.5 in
      
      if actualMove /= Nothing then
        return $ Just [(fromJust actualMove)]
@@ -48,7 +48,7 @@ offensive gameState PawnPlacement player =
 -- the optimal moves that will capture a piece
 killPlay :: Board -> [(Int, Int)] -> [(Int, Int), (Int, Int,)]
 killPlay b [] = []
-killPlay b (p:ps) | (idealKillPieceothing) = (killPlay b ps)
+killPlay b (p:ps) | (idealKillPiece == Nothing) = (killPlay b ps)
                   | (fromJust idealKillPiece Knight) = [(p, fromJust idealKill)] ++ killPlay b ps
                   | (fromJust idealKillPiece Pawn) = killPlay b ps + [(p, fromJust idealKill)]
                   where possibleKills = totalKills b p
