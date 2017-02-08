@@ -49,9 +49,8 @@ safe gameState PawnPlacement player =
     return $ Just [(fromJust move)]
   else return Nothing
 
-{----------------------------
---------- IN DANGER ---------
-----------------------------}
+{- Move options
+-}
 
 -- |Returns a list of all the positions from the given list that are a safe place for a player to have a piece
 safeSquares :: Board -> Player -> [(Int, Int)] -> [(Int, Int)]
@@ -83,9 +82,9 @@ orderDefense b player [] = []
 orderDefense b player (m:ms) | not (isSafePosition b player m) = m : orderDefense b player ms
                            | otherwise = orderDefense b player ms
 
-{----------------------------
--------- KILL MOVES ---------
-----------------------------}
+
+{- Plays that end in a capture
+-}
 
 -- |Returns an ordered list of the "best" moves that will result in a kill that can be made
 -- by a piece given by the supplied coordinate
@@ -108,9 +107,8 @@ orderCapture board player (k:ks) | isSafePosition board player k = k : (orderCap
                         | (piece == Pawn)   = (orderCapture board player ks) ++ [k]
                         where piece = typeOf (pieceOf (getFromBoard board k))
 
-{----------------------------
-------- NOT KILL MOVES ------
-----------------------------}
+{- Plays that do not end in a capture
+-}
 
 -- |Returns an ordered list of the "best" moves that will not result in a kill that can be made
 -- by a piece given by the supplied coordinate
