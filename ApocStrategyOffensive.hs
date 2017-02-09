@@ -1,5 +1,5 @@
 {- 
-Module     : ApocStrategyOffensive
+Module: ApocStrategyOffensive
 Description: Aggressively styled AI
 
 The aggressive strategy is always looking to capture enemy pieces, regardless of whether
@@ -12,8 +12,8 @@ module ApocStrategyOffensive where
 
 import Control.Monad.Trans.State.Lazy
 import Data.Maybe (fromJust, isNothing)
-import System.Environment
 import Data.Char
+import System.Environment
 import ApocTools
 import MoreApocTools
 
@@ -27,7 +27,6 @@ offensive gameState Normal player
      let capturePawn = (killPlay board (pawnPieces board player Pawn)) in
      let noCapture = (noKillPlay board (pieces board player)) in
      let actualMove = choosePlay (captureKnight ++ capturePawn ++ noCapture) 0.5 in
-     
      if actualMove /= Nothing then
        return $ Just [(fromJust actualMove)]
      else return Nothing
@@ -36,7 +35,6 @@ offensive gameState Normal player
 offensive gameState PawnPlacement player =
   let emptyPlaces = pieces (theBoard gameState) E 0 0 0 1 4 3 in
   let move = choose emptyPlaces in
-  
   if actualMove /= Nothing then
     return $ Just [(fromJust actualMove)]
   else return Nothing
