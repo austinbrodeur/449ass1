@@ -31,6 +31,7 @@ import System.Environment
 import System.IO.Unsafe
 import ApocTools
 import ApocStrategyHuman
+import Data.List.Split
 
 
 ---Main-------------------------------------------------------------
@@ -44,24 +45,72 @@ main = main' (unsafePerformIO getArgs)
      2. run from the command line by calling this function with the value from (getArgs)
 -}
 main'           :: [String] -> IO()
-main' args = do
-    putStrLn "\nThe initial board:"
-    print initBoard
+main' [] = do intMode
+main' (x:y:xs) = do checkModes x y
+main' xs = do putStrLn stratsPrint
 
-    putStrLn $ "\nThe initial board with back human (the placeholder for human) strategy having played one move\n"
-               ++ "(clearly illegal as we must play in rounds!):"
-    move <- human (initBoard) Normal Black
-    putStrLn (show $ GameState (if move==Nothing
-                                then Passed
-                                else Played (head (fromJust move), head (tail (fromJust move))))
-                               (blackPen initBoard)
-                               (Passed)
-                               (whitePen initBoard)
-                               (replace2 (replace2 (theBoard initBoard)
-                                                   ((fromJust move) !! 1)
-                                                   (getFromBoard (theBoard initBoard) ((fromJust move) !! 0)))
-                                         ((fromJust move) !! 0)
-                                         E))
+-- Returns strategies
+stratsPrint :: String
+stratsPrint = "\nStrategies:\n  offensive\n  defensive\n  human\n"
+
+stratsList :: [String]
+stratsList = ["offensive", "defensive", "human"]
+
+-- Interactive mode. Shows strategies and gets user input.
+intMode :: IO()
+intMode = do
+  putStrLn ("\nEnter one of the strategies following strategies for each challenger:\n" ++ stratsPrint)
+  putStrLn "Enter the black strategy: "
+  blackStrat <- getLine
+  putStrLn "Enter the white strategy: "
+  whiteStrat <- getLine
+  checkModes blackStrat whiteStrat
+
+-- Checks if the input from either interactive mode or normal mode is correct and runs the game if it is.
+checkModes :: [Char] -> [Char] -> IO()
+checkModes x y
+  | ((elem x stratsList) && (elem y stratsList))  = startGame x y
+  | otherwise                                     = intMode
+
+-- Gets input for the human turn and splits to input into ints. Used to do checkLen.
+splitInts :: IO [Int]
+splitInts = fmap (map read.words) getLine
+
+-- Checks to make sure the user for the human strategy enters in four integer arguments to move. Will reprompt with an error message if they enter invalid input.
+checkLen :: IO [Int]
+checkLen = do
+  ints <- splitInts
+  if length ints == 4 then return ints else do
+    putStrLn ("Too many or too few integers. Please enter four integers separated by spaces.")
+    checkLen
+
+-- Used in checkGreater to check if any of the values are greater than 4
+greaterFour :: Ord a => Num a => a -> Bool
+greaterFour x = (x <= 4)
+
+-- Used in checkLesser to check if any of the values are less than zero
+lesserZero :: Ord a => Num a => a -> Bool
+lesserZero x = (x >= 0)
+
+-- Checks if any values in the input list are greater than 4. Returns True if there is a value out of range.
+checkGreater :: Ord a => Num a => [a] -> Bool
+checkGreater [] = False
+checkGreater (x:xs)
+  | greaterFour x = checkGreater xs
+  | otherwise     = True
+
+-- Checks if any values in the input list are less than 4. Returns True if there is a value out of range.
+checkLesser :: Ord a => Num a => [a] -> Bool
+checkLesser [] = False
+checkLesser (x:xs)
+  | lesserZero x = checkLesser xs
+  | otherwise    = True
+
+
+-- Dummy for main loop. Replace with main loop when ready.
+startGame :: String -> String -> IO()
+startGame x y = putStrLn "\nmain"
+
 
 ---2D list utility functions-------------------------------------------------------
 
@@ -75,4 +124,3 @@ replace xs n elem = let (ys,zs) = splitAt n xs
 -- | Replaces the (x,y)th element in a list of lists with a new element.
 replace2        :: [[a]] -> (Int,Int) -> a -> [[a]]
 replace2 xs (x,y) elem = replace xs y (replace (xs !! y) x elem)
-
