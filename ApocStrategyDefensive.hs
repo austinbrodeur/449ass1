@@ -19,9 +19,9 @@ import System.Random
 import ApocTools
 import MoreApocTools
 
-safe :: Chooser
+defensive :: Chooser
 
-safe gameState Normal player =
+defensive gameState Normal player =
     let board = theBoard gameState in
     let defensiveMoves = (orderDefensiveMoves board player (piecesAtRisk board player)) in
     if (length defensiveMoves > 0) && (randomChance 0.7) then
@@ -38,7 +38,7 @@ safe gameState Normal player =
           return $ Just [(fst (fromJust move)), (snd (fromJust move))]
       else return Nothing
 
-safe gameState PawnPlacement player =
+defensive gameState PawnPlacement player =
   let emptyPieces = safeSquares (theBoard gameState) player (pieces (theBoard gameState) E 0 0 0 1 4 3) in
   let move = chooseFromList emptyPieces in
   if move /= Nothing then
