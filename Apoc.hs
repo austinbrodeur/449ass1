@@ -122,6 +122,23 @@ startGame x y = do
 
 aiLoop :: IO()
 aiLoop = putStrLn $ "AI LOOP"
+        if(x=="defensive")
+	    then let knightMovePlayer1 = defensive gameState Normal player
+	         if ((knightValid knightMovePlayer1!!0) && (checkEndGame == Nothing))
+		     then Played (head (fromJust knightMovePlayer1), head (tail(fromJust knightMovePlayer1)))
+		     else Goofed (head (fromJust knightMovePlayer1), head (tail(fromJust knightMovePlayer1)))
+		     (blackPen += 1)
+	         let pawnMovePlayer1 = defensive gameState PawnPlacement player
+		 if ((
+	    else let knightMovePlayer1 = offensive gameState Normal player
+	         let pawnMovePlayer1 = offensive gameState PawnPlacement player
+	if(y=="defensive")
+	    then let knightMovePlayer2 = defensive gameState Normal player
+	         let pawnMovePlayer2 = defensive gameState PawnPlacement player
+	    else let knightMovePlayer2 = offensive gameState Normal player
+	         let pawnMovePlayer2 = offensive gameState PawnPlacement player
+
+
 
 humanLoop :: IO()
 humanLoop = putStrLn $ "HUMAN LOOP"
