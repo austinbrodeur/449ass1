@@ -66,6 +66,7 @@ count x (b:bs) | x == b    = 1 + count x bs
 
 {- Methods used by both AI strategies to determine moves
 -}
+
 -- | Choose a random move from a list. Moves are weighted towards the front of the list 
 chooseRandomMove :: [a] -> Float -> Maybe a
 chooseRandomMove [] f = Nothing
@@ -73,6 +74,7 @@ chooseRandomMove (x:[]) f = Just x
 chooseRandomMove (x:xs) f | rand <= f = Just x
                           | otherwise chooseRandomMove xs f
 			  where rand = unsafePerformIO (random IO :: IO Float)  
+			  
 -- | Choose a random move from a list		  
 chooseMove :: [a] -> Maybe a
 chooseMove [] = Nothing
@@ -161,6 +163,7 @@ getPawnMoves Black True  = [(1, -1), (-1, -1)]
 getPawnMoves Black False = [(0, -1)]
 getPawnMoves White True  = [(1, 1), (-1, 1)]
 getPawnMoves White False = [(0, 1)]
+
 
 --Victory/Loss conditions
 
