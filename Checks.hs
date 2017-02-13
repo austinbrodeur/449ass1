@@ -1,9 +1,24 @@
-import System.IO.Unsafe
-
-
 --PLEASE NOTE: None of this is guaranteed to work :33
 
+module Checks (
+    PlayerPieces,
+    knightValid,
+    aggroPawnValid,
+    passivePawnValid,
+    checkcapture,
+    checkPromotion,
+    promoMoveValid,
+    count,
+    checkEndGame,
+    allPawnsCaptured,
+    twoPenalties,
+    checkBothPass,
+    bothPass) where
+
+
 type PlayerPieces = [Cell]
+
+
 
 --Offsets for knight and pawn
 knightOffset = [(1,2), (1,-2), (-1,2), (-1,-2), (2,1), (-2,1), (2,-1), (-2,-1)]
@@ -15,7 +30,7 @@ knightValid stt des = elem ((fst stt - fst des), (snd stt - snd des)) knightOffs
 
 --Checks if pawn movement is valid when capturing
 aggroPawnValid :: (Int, Int) -> (Int, Int) -> Bool
-aggropawnValid stt des = elem ((fst stt - fst des), (snd stt - snd des)) aggroPawnOffset
+aggroPawnValid stt des = elem ((fst stt - fst des), (snd stt - snd des)) aggroPawnOffset
 
 --Checks if pawn movement is valid when not capturing
 passivePawnValid :: (Int, Int) -> (Int, Int) -> Bool
@@ -62,108 +77,6 @@ count :: Eq a => a -> [a] -> Int
 count x [] = 0
 count x (b:bs) | x == b    = 1 + count x bs
 	       | otherwise = count x bs
-	       
-
-{- Methods used by both AI strategies to determine moves
--}
-
--- | Choose a random move from a list. Moves are weighted towards the front of the list 
-chooseRandomMove :: [a] -> Float -> Maybe a
-chooseRandomMove [] f = Nothing
-chooseRandomMove (x:[]) f = Just x
-chooseRandomMove (x:xs) f | rand <= f = Just x
-                          | otherwise chooseRandomMove xs f
-			  where rand = unsafePerformIO (random IO :: IO Float)  
-			  
--- | Choose a random move from a list		  
-chooseMove :: [a] -> Maybe a
-chooseMove [] = Nothing
-chooseMove xs = Just (xs !! index)
-                  where index = floor ((unsafePerformIO (randomIO :: IO Float)) * (fromIntegral (length xs)))
-		  
--- |Returns whether a position is safe or not
-safeTile :: Board -> Player -> (Int, Int) -> Bool
-safeTile b player p = tileSafeFromCapture (allPlayerMoves b (otherPlayer player)) p
-
--- |Returns whether a position is safe from being captured
-tileSafeFromCapture :: [(Int, Int)] -> (Int, Int) -> Bool
-tileSafeFromcapture [] pos = True
-tileSafeFromCapture (m:ms) pos | (m == pos) = False
-                                   | otherwise = tileSafeFromCapture ms pos
-				   
--- |Returns all possible moves
-allPossibleMoves :: Board -> Player -> [(Int, Int)]
-allPossibleMoves board player = allMoves board (allPiecesOfType board player Knight) ++ allMoves board (allPiecesOfType board player Pawn)
-
--- |Returns a list of all possible moves from a specific position
-allMoves :: Board -> [(Int, Int)] -> [(Int, Int)]
-allMoves board [] = []
-allMoves board (p:ps) = getMoves2 board p False ++ allMoves board ps
-
--- |Returns a list of all pieces on the board
-allPieces :: Board -> Player -> [(Int, Int)]
-allPieces b p = (allPiecesOfType b p Knight) ++ (allPiecesOfType b p Pawn)
-
--- |Returns a list of all the specified player's pieces on the board 
-allPiecesOfType :: Board -> Player -> PieceType -> [(Int, Int)]
-allPiecesOfType b p t | (p == White && t == Knight) = pieces b WK 0 0 0 0 4 4
-                      | (p == White && t == Pawn)   = pieces b WP 0 0 0 0 4 4
-                      | (p == Black && t == Knight) = pieces b BK 0 0 0 0 4 4
-                      | (p == Black && t == Pawn)   = pieces b BP 0 0 0 0 4 4
-
--- |Returns a list of all the pieces on the board of a specific cell type
-pieces :: Board -> Cell -> Int -> Int -> Int -> Int -> Int -> Int -> [(Int, Int)]
-pieces b p x y minx miny maxx maxy | (x == maxx && y == maxy) = if (getFromBoard b (maxx, maxy)) == p then (x, y) : [] else []
-                                   | (x == maxx) = if (getFromBoard b (maxx, y)) == p then (maxx, y) : pieces b p minx (y + 1) minx miny maxx maxy else pieces b p minx (y + 1) minx miny maxx maxy
-                                   | otherwise = if (getFromBoard b (x, y)) == p then (x, y) : pieces b p (x + 1) y minx miny maxx maxy else pieces b p (x + 1) y minx miny maxx maxy
-
--- |Returns a list of moves from a piece, no capture
-getMoves :: Board -> (Int, Int) -> Bool -> [(Int, Int)]
-getMoves b pos valid | (piece == Knight) = moves b knightMoves pos (length knightMoves) valid
-                     | (piece == Pawn)   = moves b pawnMoves pos (length pawnMoves) valid
-                     where piece = typeOf (pieceOf (getFromBoard b pos))
-                           player = playerOf (pieceOf (getFromBoard b pos))
-                           knightMoves = getKnightMoves
-                           pawnMoves = getPawnMoves player False
-
--- |Returns a list of moves from a piece, capture
-getMoves2 :: Board -> (Int, Int) -> Bool -> [(Int, Int)]
-getMoves2 b pos valid | (piece == Knight) = moves b knightMoves pos (length knightMoves) valid
-                      | (piece == Pawn)   = moves b pawnMoves pos (length pawnMoves) valid
-                      where piece = typeOf (pieceOf (getFromBoard b pos))
-                            player = playerOf (pieceOf (getFromBoard b pos))
-                            knightMoves = getKnightMoves
-                            pawnMoves = getPawnMoves player True
-
--- | Moves a piece can make
-moves :: Board -> [(Int, Int)] -> (Int, Int) -> Int -> Bool -> [(Int, Int)]
-moves b m p 0 valid = []
-moves b (m:ms) pos index valid | (valid && isInBounds pos && isInBounds to && getFromBoard b to == E) = to : (moves b ms pos (index - 1) valid)
-                               | ((not valid) && isInBounds pos && isInBounds to) = to : (moves b ms pos (index - 1) valid)
-                               | otherwise = moves b ms pos (index - 1) valid
-                               where to = (fst pos + fst m, snd pos + snd m)
-			       
--- |Check if the move is within the bounds of the board
-isInBounds      :: (Int, Int) -> Bool
-isInBounds move | a>4 = False
-                | b>4 = False
-                | a<0 = False
-                | b<0 = False
-                | otherwise = True
-                where a = fst move
-                      b = snd move
-		      
--- |Returns a list of allowed Knight moves
-getKnightMoves :: [(Int, Int)]
-getKnightMoves = [(1, 2), (1, -2), (-1, 2), (-1, -2), (2, 1), (2, -1), (-2, 1), (-2, -1)]
-
--- |Returns a list of allowed pawn moves
-getPawnMoves :: Player -> Bool -> [(Int, Int)]
-getPawnMoves Black True  = [(1, -1), (-1, -1)]
-getPawnMoves Black False = [(0, -1)]
-getPawnMoves White True  = [(1, 1), (-1, 1)]
-getPawnMoves White False = [(0, 1)]
-
 
 --Victory/Loss conditions
 

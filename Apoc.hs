@@ -31,7 +31,6 @@ import System.Environment
 import System.IO.Unsafe
 import ApocTools
 import ApocStrategyHuman
-import Data.List.Split
 
 
 ---Main-------------------------------------------------------------
@@ -106,10 +105,27 @@ checkLesser (x:xs)
   | lesserZero x = checkLesser xs
   | otherwise    = True
 
+strats = ["offensive", "defensive"]
 
 -- Dummy for main loop. Replace with main loop when ready.
 startGame :: String -> String -> IO()
-startGame x y = putStrLn "\nmain"
+startGame x y = do
+                let board = initBoard
+		let whitePieces = [WP, WP, WP, WP, WP, WK, WK]
+		let blackPieces = [BP, BP, BP, BP, BP, BK, BK]
+		
+		putStrLn $ show board
+
+		if ((x `elem` strats) && (y `elem` strats))
+		   then aiLoop
+		   else humanLoop
+
+aiLoop :: IO()
+aiLoop = putStrLn $ "AI LOOP"
+
+humanLoop :: IO()
+humanLoop = putStrLn $ "HUMAN LOOP"
+
 
 
 ---2D list utility functions-------------------------------------------------------
