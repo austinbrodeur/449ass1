@@ -26,7 +26,7 @@ offensive gameState Normal player
      let captureKnight = (killPlay board (knightPieces board player Knight)) in
      let capturePawn = (killPlay board (pawnPieces board player Pawn)) in
      let noCapture = (noKillPlay board (pieces board player)) in
-     let actualMove = choosePlay (captureKnight ++ capturePawn ++ noCapture) 0.5 in
+     let actualMove = chooseRandomMove (captureKnight ++ capturePawn ++ noCapture) 0.5 in
      if actualMove /= Nothing then
        return $ Just [(fromJust actualMove)]
      else return Nothing
@@ -34,7 +34,7 @@ offensive gameState Normal player
      
 offensive gameState PawnPlacement player =
   let emptyPlaces = pieces (theBoard gameState) E 0 0 0 1 4 3 in
-  let move = choose emptyPlaces in
+  let move = chooseMove emptyPlaces in
   if actualMove /= Nothing then
     return $ Just [(fromJust actualMove)]
   else return Nothing
@@ -50,7 +50,7 @@ killPlay b (p:ps) | (idealKillPiece == Nothing) = (killPlay b ps)
                   | (fromJust idealKillPiece Knight) = [(p, fromJust idealKill)] ++ killPlay b ps
                   | (fromJust idealKillPiece Pawn) = killPlay b ps + [(p, fromJust idealKill)]
                   where possibleKills = totalKills b p
-                        idealKill = choosePlay (capture b possibleKills) 0.5
+                        idealKill = chooseRandomMove (capture b possibleKills) 0.5
                         idealKillPiece | (idealKill == Nothing) = Nothing
                                        | otherwise = Just $ typeOf (pieceOf (getFromBoard b (fromJust idealKill)))
                            
@@ -71,7 +71,7 @@ nokillPlay b [] = []
 nokillPlay b (p:ps) | (best == Nothing) = (noKillPlay b ps)
                     | otherwise = (p, fromJust best) : (noKillPlay b ps)
                     where movesList = notKills b p
-                          best = choosePlay (noCapture b moves) 0.5
+                          best = chooseRandomMove (noCapture b moves) 0.5
                           
 --| Simply a placeholder method because this strategy only tries to capture pieces
 -- so there is no need to order the non-capture moves, simply pick one and continue
