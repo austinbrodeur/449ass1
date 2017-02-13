@@ -81,7 +81,7 @@ orderDefensiveMoves b player (p:ps) | (bestMove == Nothing) = orderDefensiveMove
 -- | Returns a list of safe places we are able to reach on the board
 orderDefense :: Board -> Player -> [(Int, Int)] -> [(Int, Int)]
 orderDefense b player [] = []
-orderDefense b player (m:ms) | not (isSafePosition b player m) = m : orderDefense b player ms
+orderDefense b player (m:ms) | not (safeTile b player m) = m : orderDefense b player ms
                            | otherwise = orderDefense b player ms
 
 
@@ -105,7 +105,7 @@ orderCapturePlay b player (p:ps) | (bestKillPiece == Nothing) = (orderCapturePla
 -- |Return a list of pieces able to be capture in order of importance (Knight, Pawn)
 orderCapture :: Board -> Player -> [(Int, Int)] -> [(Int, Int)]
 orderCapture board player [] = []
-orderCapture board player (k:ks) | isSafePosition board player k = k : (orderCapture board player ks)
+orderCapture board player (k:ks) | safeTile board player k = k : (orderCapture board player ks)
                         | (piece == Knight) = (orderCapture board player ks) ++ [k]
                         | (piece == Pawn)   = (orderCapture board player ks) ++ [k]
                         where piece = typeOf (pieceOf (getFromBoard board k))
@@ -117,7 +117,7 @@ orderCapture board player (k:ks) | isSafePosition board player k = k : (orderCap
 -- |Returns a list of the current safe spaces on the board 
 safeSquares :: Board -> Player -> [(Int, Int)] -> [(Int, Int)]
 safeSquares b player [] = []
-safeSquares b player (x:xs) | (isSafePosition b player x) = x : safeSquares b player xs
+safeSquares b player (x:xs) | (safeTile b player x) = x : safeSquares b player xs
                               | otherwise = safeSquares b player xs
 
 
@@ -129,5 +129,5 @@ piecesAtRisk b player = allPiecesAtRisk b player ((allPiecesOfType b player Pawn
 -- |This method returns a list of pieces in danger of being captured
 allPiecesAtRisk :: Board -> Player -> [(Int, Int)] -> [(Int, Int)]
 allPiecesAtRisk b player [] = []
-allPiecesAtRisk b player (x:xs) | not (isSafePosition b player x) = x : allPiecesAtRisk b player xs
+allPiecesAtRisk b player (x:xs) | not (safeTile b player x) = x : allPiecesAtRisk b player xs
                                   | otherwise = allPiecesAtRisk b player xs
