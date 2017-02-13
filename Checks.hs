@@ -1,3 +1,6 @@
+import System.IO.Unsafe
+
+
 --PLEASE NOTE: None of this is guaranteed to work :33
 
 type PlayerPieces = [Cell]
@@ -59,6 +62,20 @@ count :: Eq a => a -> [a] -> Int
 count x [] = 0
 count x (b:bs) | x == b    = 1 + count x bs
 	       | otherwise = count x bs
+	       
+
+-- | Choose a random element from a list. 
+chooseRandomMove :: [a] -> Float -> Maybe a
+chooseRandomMove [] f = Nothing
+chooseRandomMove (x:[]) f = Just x
+chooseRandomMove (x:xs) f | rand <= f = Just x
+                          | otherwise chooseRandomMove xs f
+			  where rand = unsafePerformIO (random IO :: IO Float)  
+			  
+chooseMove :: [a] -> Maybe a
+chooseMove [] = Nothing
+chooseMove xs = Just (xs !! index)
+                  where index = floor ((unsafePerformIO (randomIO :: IO Float)) * (fromIntegral (length xs)))
 
 --Victory/Loss conditions
 
