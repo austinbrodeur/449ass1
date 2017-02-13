@@ -150,6 +150,17 @@ isInBounds move | a>4 = False
                 | otherwise = True
                 where a = fst move
                       b = snd move
+		      
+-- |Returns a list of allowed Knight moves
+getKnightMoves :: [(Int, Int)]
+getKnightMoves = [(1, 2), (1, -2), (-1, 2), (-1, -2), (2, 1), (2, -1), (-2, 1), (-2, -1)]
+
+-- |Returns a list of allowed pawn moves
+getPawnMoves :: Player -> Bool -> [(Int, Int)]
+getPawnMoves Black True  = [(1, -1), (-1, -1)]
+getPawnMoves Black False = [(0, -1)]
+getPawnMoves White True  = [(1, 1), (-1, 1)]
+getPawnMoves White False = [(0, 1)]
 
 --Victory/Loss conditions
 
