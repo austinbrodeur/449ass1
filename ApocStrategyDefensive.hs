@@ -6,6 +6,7 @@ This strategies' goal is to make the safest possible plays. It does so by
 only making moves which cannot be reached by an opponent in the next turn.
 This strategy is quite heavily based on the offensive strategy with some added
 checks and different weight on safer moves.
+
 -}
 
 module ApocStrategyDefensive where
@@ -20,7 +21,7 @@ import ApocTools
 import MoreApocTools
 
 defensive :: Chooser
-
+-- * Game state based on a normal play, which would be moving a knight.  
 defensive gameState Normal player =
     let board = theBoard gameState in
     let defensiveMoves = (orderDefensiveMoves board player (piecesAtRisk board player)) in
@@ -37,7 +38,8 @@ defensive gameState Normal player =
       if move /= Nothing then
           return $ Just [(fst (fromJust move)), (snd (fromJust move))]
       else return Nothing
-
+      
+-- * Game state based on a pawn move
 defensive gameState PawnPlacement player =
   let emptyPieces = safeSquares (theBoard gameState) player (pieces (theBoard gameState) E 0 0 0 1 4 3) in
   let move = chooseFromList emptyPieces in
