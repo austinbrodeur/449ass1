@@ -26,7 +26,7 @@ defensive gameState Normal player =
     let board = theBoard gameState in
     let defensiveMoves = (orderDefensiveMoves board player (piecesAtRisk board player)) in
     if (length defensiveMoves > 0) && (randomChance 0.7) then
-      let move = chooseFromWeightedList defensiveMoves 0.75 in
+      let move = chooseRandomMove defensiveMoves 0.75 in
       if move /= Nothing then
           return $ Just [(fst (fromJust move)), (snd (fromJust move))]
       else return Nothing
@@ -34,7 +34,7 @@ defensive gameState Normal player =
       let captureKnightPlay = (orderCapturePlay board player (allPiecesOfType board player Knight))
           capturePawnPlay = (orderCapturePlay board player (allPiecesOfType board player Pawn))
           noCapturePlay = (orderCapturePlay board player (allPieces board player))
-          move = chooseFromWeightedList (captureKnightPlay ++ capturePawnPlay ++ noCapturePlay) 0.75 in
+          move = chooseRandomMove (captureKnightPlay ++ capturePawnPlay ++ noCapturePlay) 0.75 in
       if move /= Nothing then
           return $ Just [(fst (fromJust move)), (snd (fromJust move))]
       else return Nothing
@@ -42,7 +42,7 @@ defensive gameState Normal player =
 -- * Game state based on a pawn move
 defensive gameState PawnPlacement player =
   let emptyPieces = safeSquares (theBoard gameState) player (pieces (theBoard gameState) E 0 0 0 1 4 3) in
-  let move = chooseFromList emptyPieces in
+  let move = chooseMove emptyPieces in
   if move /= Nothing then
     return $ Just [(fromJust move)]
   else return Nothing
@@ -60,7 +60,7 @@ noCaptureMove b player [] = []
 noCaptureMove b player (p:ps) | (best == Nothing) = (noCaptureMove b player ps)
                                   | otherwise = (p, fromJust best) : (noCaptureMove b player ps)
                                   where movesList = allNotKills b p
-                                        best = chooseFromWeightedList (orderNoCapture b player movesList) 0.75
+                                        best = chooseRandomMove (orderNoCapture b player movesList) 0.75
 
 -- Returns a list of no capture plays
 orderNoCapture :: Board -> Player -> [(Int, Int)] -> [(Int, Int)]
@@ -75,7 +75,7 @@ orderDefensiveMoves b player [] = []
 orderDefensiveMoves b player (p:ps) | (bestMove == Nothing) = orderDefensiveMoves b player ps
                                   | otherwise = (p, fromJust bestMove) : orderDefensiveMoves b player ps
                                   where movesList = getMoves b p True
-                                        bestMove = chooseFromWeightedList (orderDefense b player movesList) 0.75
+                                        bestMove = chooseRandomMove(orderDefense b player movesList) 0.75
 
 
 -- | Returns a list of safe places we are able to reach on the board
@@ -97,7 +97,7 @@ orderCapturePlay b player (p:ps) | (bestKillPiece == Nothing) = (orderCapturePla
                         | (fromJust bestKillPiece == Knight) = orderCapturePlay b player ps ++ [(p, fromJust bestKill)]
                         | (fromJust bestKillPiece == Pawn)   = orderCapturePlay b player ps ++ [(p, fromJust bestKill)]
                         where killsList = allKills b p
-                              bestKill = chooseFromWeightedList (orderCapture b player killsList) 0.75
+                              bestKill = chooseRandomMove (orderCapture b player killsList) 0.75
                               bestKillPiece | (bestKill == Nothing) = Nothing
                                             | otherwise = Just $ typeOf (pieceOf (getFromBoard b (fromJust bestKill)))
 
