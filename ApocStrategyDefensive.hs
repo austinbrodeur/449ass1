@@ -18,7 +18,7 @@ import System.IO.Unsafe
 import System.Environment
 import System.Random
 import ApocTools
-import MoreApocTools
+import Checks
 
 defensive :: Chooser
 -- * Game state based on a normal play, which would be moving a knight.  
