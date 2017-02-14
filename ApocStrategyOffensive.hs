@@ -15,7 +15,7 @@ import Data.Maybe (fromJust, isNothing)
 import Data.Char
 import System.Environment
 import ApocTools
-import MoreApocTools
+import Checks
 
 -- | The offensive chooser function. It takes in the board state
 -- and takes the most aggressive play
