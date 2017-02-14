@@ -23,9 +23,9 @@ offensive :: Chooser
 
 offensive gameState Normal player
      let board = theBoard gameState in 
-     let captureKnight = (killPlay board (knightPieces board player Knight)) in
-     let capturePawn = (killPlay board (pawnPieces board player Pawn)) in
-     let noCapture = (noKillPlay board (pieces board player)) in
+     let captureKnight = (killPlay board (allPiecesOfType board player Knight)) in
+     let capturePawn = (killPlay board (allPiecesOfType board player Pawn)) in
+     let noCapture = (noKillPlay board (allPieces board player)) in
      let actualMove = chooseRandomMove (captureKnight ++ capturePawn ++ noCapture) 0.5 in
      if actualMove /= Nothing then
        return $ Just [(fromJust actualMove)]
@@ -35,8 +35,8 @@ offensive gameState Normal player
 offensive gameState PawnPlacement player =
   let emptyPlaces = pieces (theBoard gameState) E 0 0 0 1 4 3 in
   let move = chooseMove emptyPlaces in
-  if actualMove /= Nothing then
-    return $ Just [(fromJust actualMove)]
+  if move /= Nothing then
+    return $ Just [(fromJust move)]
   else return Nothing
      
      
@@ -44,7 +44,7 @@ offensive gameState PawnPlacement player =
      
 -- | Takes in the board state and initial coordinates and returns a list of 
 -- the optimal moves that will capture a piece
-killPlay :: Board -> [(Int, Int)] -> [(Int, Int), (Int, Int,)]
+killPlay :: Board -> [(Int, Int)] -> [((Int, Int), (Int, Int,))]
 killPlay b [] = []
 killPlay b (p:ps) | (idealKillPiece == Nothing) = (killPlay b ps)
                   | (fromJust idealKillPiece Knight) = [(p, fromJust idealKill)] ++ killPlay b ps
@@ -66,12 +66,12 @@ capture board (k:ks) | (piece == Knight) = [k] ++ (capture board ks)
          
 -- | Takes in the board state and initial coordinates and returns a list of 
 -- the optimal moves that will not capture a piece       
-noKillPlay :: Board -> [(Int, Int)] -> [(Int, Int), (Int, Int,)]
-nokillPlay b [] = []
-nokillPlay b (p:ps) | (best == Nothing) = (noKillPlay b ps)
+noKillPlay :: Board -> [(Int, Int)] -> [((Int, Int), (Int, Int,))]
+noKillPlay b [] = []
+noKillPlay b (p:ps) | (best == Nothing) = (noKillPlay b ps)
                     | otherwise = (p, fromJust best) : (noKillPlay b ps)
-                    where movesList = notKills b p
-                          best = chooseRandomMove (noCapture b moves) 0.5
+                    where movesList = noKill b p
+                          best = chooseRandomMove (noKill b moves) 0.5
                           
 --| Simply a placeholder method because this strategy only tries to capture pieces
 -- so there is no need to order the non-capture moves, simply pick one and continue
