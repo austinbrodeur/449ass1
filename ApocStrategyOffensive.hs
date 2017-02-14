@@ -73,7 +73,7 @@ noKillPlay b (p:ps) | (best == Nothing) = (noKillPlay b ps)
                     where movesList = noKill b p
                           best = chooseRandomMove (noKill b moves) 0.5
                           
---| Simply a placeholder method because this strategy only tries to capture pieces
+-- | Simply a placeholder method because this strategy only tries to capture pieces
 -- so there is no need to order the non-capture moves, simply pick one and continue
 noKill :: Board -> [(Int, Int)] -> [(Int, Int)]
 noKill b ps = ps
