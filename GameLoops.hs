@@ -10,8 +10,8 @@ module GameLoops (
 
 import ApocTools
 import ApocStrategyHuman
-import ApocStrategyDefensive
-import ApocStrategyOffensive
+--import ApocStrategyDefensive
+--import ApocStrategyOffensive
 import Data.List
 import Data.Maybe (fromJust, isNothing)
 import Checks
@@ -54,20 +54,20 @@ startGame x y = do
 --if the bool is true keep going
 gameLoop :: GameState -> String -> String -> PlayerPieces -> PlayerPieces -> IO()
 gameLoop board pw pb wp bp = do
-				putStrLn $ show board
+
 
 				white <- (if (pw == "offensive")
-					     then offensive board Normal White
+					     then human board Normal White
 					     else if (pw == "defensive")
-					             then defensive board Normal White
+					             then human board Normal White
 						     else human board Normal White )
 
 				black <- (if (pb == "offensive")
-					     then offensive board Normal Black
+					     then human board Normal Black
 					     else if (pb == "defensive")
-					            then defensive board Normal Black
+					            then human board Normal Black
 						    else human board Normal Black )
-				
+				putStrLn $ show board
 {-
 				if (black == Nothing)
 				   then blackPlay board = Passed
@@ -96,14 +96,14 @@ gameLoop board pw pb wp bp = do
 				   then v2 <- capture ((getFromBoard board (head (fromJust black))) (getFromBoard board (head (tail (fromJust black))))
 
 				--movements //replacing shit
-		-}
+		
 				let winner = (checkEndGame board wp bp) 
 				if (winner /= Nothing)
 				   then do
 					putStrLn $ show board
 					putStrLn $ "Holy Fuck, " ++ winner ++ " just won!"
 				   else (gameLoop board pw pb wp bp)
-
+-}
 
 
 

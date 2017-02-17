@@ -18,11 +18,16 @@ module Checks (
     bothPass, splitInts, checkLen, greaterFour, lesserZero, checkGreater, checkLesser) where
 
 import ApocTools
+import System.IO.Unsafe
+import System.Random
 
 type PlayerPieces = [Cell]
 
 whiteGoons = [WP, WK]
 blackGoons = [BP, BK]
+
+pawn = [WP, BP]
+knight = [WK, BK]
 
 --Offsets for knight and pawn
 knightOffset = [(1,2), (1,-2), (-1,2), (-1,-2), (2,1), (-2,1), (2,-1), (-2,-1)]
@@ -43,6 +48,13 @@ checkIfOwned b p x y | p == White = if (getFromBoard b (x, y) `elem` whiteGoons)
 					    then True
 				   	    else False
 
+
+
+checkPlayerType :: Board -> (Int, Int) -> Player
+checkPlayerType b pos = if ((getFromBoard b pos) `elem` whiteGoons)
+					    then White
+					    else Black
+		     
 --Checks if knight movement is valid
 knightValid :: [Int] -> Bool
 knightValid (a:b:c:d:s) = elem ((a - c), (b - d)) knightOffset
@@ -109,8 +121,8 @@ chooseRandomMove :: [a] -> Float -> Maybe a
 chooseRandomMove [] f = Nothing
 chooseRandomMove (x:[]) f = Just x
 chooseRandomMove (x:xs) f | rand <= f = Just x
-                            | otherwise chooseRandomMove xs f
-  			  where rand = unsafePerformIO (random IO :: IO Float)  
+                          | otherwise = chooseRandomMove xs f
+  			  where rand = unsafePerformIO (randomIO :: IO Float)  
  			  
 -- | Choose a random move from a list		  
 chooseMove :: [a] -> Maybe a
@@ -120,7 +132,7 @@ chooseMove xs = Just (xs !! index)
 		  
 -- |Returns whether a position is safe or not
 safeTile :: Board -> Player -> (Int, Int) -> Bool
-safeTile b player p = tileSafeFromCapture (allPlayerMoves b (otherPlayer player)) p
+safeTile b player p = tileSafeFromCapture (allPossibleMoves b (otherPlayer player)) p
 
 -- |Returns whether a position is safe from being captured
 tileSafeFromCapture :: [(Int, Int)] -> (Int, Int) -> Bool
@@ -130,7 +142,7 @@ tileSafeFromCapture (m:ms) pos | (m == pos) = False
  				   
 -- |Returns all possible moves
 allPossibleMoves :: Board -> Player -> [(Int, Int)]
-allPossibleMoves board player = allMoves board (allPiecesOfType board player Knight) ++ allMoves board (allPiecesOfType board player Pawn)
+allPossibleMoves board player = allMoves board (allPiecesOfType board player "Knight") ++ allMoves board (allPiecesOfType board player "Pawn")
  
 -- |Returns a list of all possible moves from a specific position
 allMoves :: Board -> [(Int, Int)] -> [(Int, Int)]
@@ -139,39 +151,35 @@ allMoves board (p:ps) = getMoves2 board p False ++ allMoves board ps
   
 -- |Returns a list of all pieces on the board
 allPieces :: Board -> Player -> [(Int, Int)]
-allPieces b p = (allPiecesOfType b p Knight) ++ (allPiecesOfType b p Pawn)
+allPieces b p = (allPiecesOfType b p "Knight") ++ (allPiecesOfType b p "Pawn")
   
 -- |Returns a list of all the specified player's pieces on the board 
-allPiecesOfType :: Board -> Player -> PieceType -> [(Int, Int)]
-allPiecesOfType b p t | (p == White && t == Knight) = pieces b WK 0 0 0 0 4 4
-                      | (p == White && t == Pawn)   = pieces b WP 0 0 0 0 4 4
-                      | (p == Black && t == Knight) = pieces b BK 0 0 0 0 4 4
-                      | (p == Black && t == Pawn)   = pieces b BP 0 0 0 0 4 4
+allPiecesOfType :: Board -> Player ->  String -> [(Int, Int)]
+allPiecesOfType b p t | (p == White && t == "Knight") = pieces b WK 0 0 0 0 4 4
+                      | (p == White && t == "Pawn")   = pieces b WP 0 0 0 0 4 4
+                      | (p == Black && t == "Knight") = pieces b BK 0 0 0 0 4 4
+                      | (p == Black && t == "Pawn")   = pieces b BP 0 0 0 0 4 4
   
 -- |Returns a list of all the pieces on the board of a specific cell type
 pieces :: Board -> Cell -> Int -> Int -> Int -> Int -> Int -> Int -> [(Int, Int)]
 pieces b p x y minx miny maxx maxy | (x == maxx && y == maxy) = if (getFromBoard b (maxx, maxy)) == p then (x, y) : [] else []
                                    | (x == maxx) = if (getFromBoard b (maxx, y)) == p then (maxx, y) : pieces b p minx (y + 1) minx miny maxx maxy else pieces b p minx (y + 1) minx miny maxx maxy
                                    | otherwise = if (getFromBoard b (x, y)) == p then (x, y) : pieces b p (x + 1) y minx miny maxx maxy else pieces b p (x + 1) y minx miny maxx maxy
-  
+
 -- |Returns a list of moves from a piece, no capture
 getMoves :: Board -> (Int, Int) -> Bool -> [(Int, Int)]
-getMoves b pos valid | (piece == Knight) = moves b knightMoves pos (length knightMoves) valid
-                     | (piece == Pawn)   = moves b pawnMoves pos (length pawnMoves) valid
-                     where piece = typeOf (pieceOf (getFromBoard b pos))
-                           player = playerOf (pieceOf (getFromBoard b pos))
-                           knightMoves = getKnightMoves
-                           pawnMoves = getPawnMoves player False
+getMoves b pos valid | (checkPieceType b pos == "Knight") = moves b knightMoves pos (length knightMoves) valid
+                     | (checkPieceType b pos ==  "Pawn")   = moves b pawnMoves pos (length pawnMoves) valid
+                     where knightMoves = allPossibleMovesKnight b (checkPlayerType b pos)
+                           pawnMoves = allPossibleMovesPawn b (checkPlayerType b pos)
   
 -- |Returns a list of moves from a piece, capture
 getMoves2 :: Board -> (Int, Int) -> Bool -> [(Int, Int)]
-getMoves2 b pos valid | (piece == Knight) = moves b knightMoves pos (length knightMoves) valid
-                      | (piece == Pawn)   = moves b pawnMoves pos (length pawnMoves) valid
-                      where piece = typeOf (pieceOf (getFromBoard b pos))
-                            player = playerOf (pieceOf (getFromBoard b pos))
-                            knightMoves = getKnightMoves
-                            pawnMoves = getPawnMoves player True
- 
+getMoves2 b pos valid | (checkPieceType b pos == "Knight") = moves b knightMoves pos (length knightMoves) valid
+                      | (checkPieceType b pos ==  "Pawn")   = moves b pawnMoves pos (length pawnMoves) valid
+                      where knightMoves = allPossibleMovesKnight b (checkPlayerType b pos)
+                            pawnMoves = allPossibleMovesPawn b (checkPlayerType b pos)
+
 -- | Moves a piece can make
 moves :: Board -> [(Int, Int)] -> (Int, Int) -> Int -> Bool -> [(Int, Int)]
 moves b m p 0 valid = []
@@ -188,7 +196,11 @@ isInBounds move | a>4 = False
                 | b<0 = False
                 | otherwise = True
                 where a = fst move
-                       b = snd move
+                      b = snd move
+
+otherPlayer :: Player -> Player
+otherPlayer Black = White
+otherPlayer White = Black
 
 
 
@@ -281,6 +293,15 @@ checkLesser (x:xs)
   | lesserZero x = checkLesser xs
   | otherwise    = True
 
+checkPieceType :: Board -> (Int, Int) -> String
+checkPieceType b pos = if ((getFromBoard b pos) `elem` pawn)
+			    then "Pawn"
+			    else "Knight"
+		
+allPossibleMovesKnight :: Board -> Player -> [(Int, Int)]
+allPossibleMovesKnight board player = allMoves board (allPiecesOfType board player "Knight")
 
-
+allPossibleMovesPawn :: Board -> Player -> [(Int, Int)]
+allPossibleMovesPawn board player = allMoves board (allPiecesOfType board player "Pawn")
+ 
 
