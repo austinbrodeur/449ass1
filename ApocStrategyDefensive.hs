@@ -16,7 +16,6 @@ import Data.Maybe (fromJust, isNothing)
 import Data.Char
 import System.IO.Unsafe
 import System.Environment
-import System.Random
 import ApocTools
 import Checks
 
@@ -31,8 +30,8 @@ defensive gameState Normal player =
           return $ Just [(fst (fromJust move)), (snd (fromJust move))]
       else return Nothing
     else
-      let captureKnightPlay = (orderCapturePlay board player (allPiecesOfType board player Knight))
-          capturePawnPlay = (orderCapturePlay board player (allPiecesOfType board player Pawn))
+      let captureKnightPlay = (orderCapturePlay board player (allPiecesOfType board player "Knight"))
+          capturePawnPlay = (orderCapturePlay board player (allPiecesOfType board player "Pawn"))
           noCapturePlay = (orderCapturePlay board player (allPieces board player))
           move = chooseRandomMove (captureKnightPlay ++ capturePawnPlay ++ noCapturePlay) 0.75 in
       if move /= Nothing then
@@ -123,7 +122,7 @@ safeSquares b player (x:xs) | (safeTile b player x) = x : safeSquares b player x
 
 -- |Returns a list of pieces in danger on the board
 piecesAtRisk :: Board -> Player -> [(Int, Int)]
-piecesAtRisk b player = allPiecesAtRisk b player ((allPiecesOfType b player Pawn) ++ (allPiecesOfType b player Knight))
+piecesAtRisk b player = allPiecesAtRisk b player ((allPiecesOfType b player "Pawn") ++ (allPiecesOfType b player "Knight"))
 
 
 -- |This method returns a list of pieces in danger of being captured

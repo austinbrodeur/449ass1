@@ -22,7 +22,7 @@ import Checks
 offensive :: Chooser
 
 offensive gameState Normal player
-     let board = theBoard gameState in 
+     let board = theBoard gameState in
      let captureKnight = (killPlay board (allPiecesOfType board player Knight)) in
      let capturePawn = (killPlay board (allPiecesOfType board player Pawn)) in
      let noCapture = (noKillPlay board (allPieces board player)) in
