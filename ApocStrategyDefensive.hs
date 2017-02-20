@@ -71,5 +71,5 @@ addPair one two = ((fst one + fst two), (snd one + snd two))
 
 chooseRandomMove :: [(Int, Int)] -> Maybe (Int, Int)
 chooseRandomMove [] = Nothing
-chooseRandomMove ops = let i = unsafePerformIO(getStdRandom(randomR(0, length ops))) in
+chooseRandomMove ops = let i = unsafePerformIO(randomIO (0, (length ops) -1)) in
                                Just(ops !! i)
