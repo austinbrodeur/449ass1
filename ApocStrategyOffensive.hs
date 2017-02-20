@@ -1,7 +1,6 @@
 {- 
 Module: ApocStrategyOffensive
 Description: Aggressively styled AI
-
 The aggressive strategy is always looking to capture enemy pieces, regardless of whether
 the play is intelligent or not. It searches the game board to find any possible capture 
 and takes it. If it finds no plays which will capture a piece, it simply makes the first non-
@@ -16,64 +15,88 @@ import Data.Char
 import System.Environment
 import ApocTools
 import Checks
+import System.Random
+import System.IO.Unsafe
 
--- | The offensive chooser function. It takes in the board state
--- and takes the most aggressive play
+{- offensive strategy always tries to go for kill moves. If none are available it moves randomly.. returns an IO(Maybe[(Int, Int)]). -}
 offensive :: Chooser
 
-offensive gameState Normal player
-     let board = theBoard gameState in 
-     let captureKnight = (killPlay board (allPiecesOfType board player Knight)) in
-     let capturePawn = (killPlay board (allPiecesOfType board player Pawn)) in
-     let noCapture = (noKillPlay board (allPieces board player)) in
-     let actualMove = chooseRandomMove (captureKnight ++ capturePawn ++ noCapture) 0.5 in
-     if actualMove /= Nothing then
-       return $ Just [(fromJust actualMove)]
-     else return Nothing
+offensive board Normal White = 
+     let validMoves = (checkKillMoves board White (getPieces board WK 0 0 0 0 4 4)) in
+     if (validMoves /= [])
+        then return $ Just [((head validMoves))]
+        else let validMoves = (checkKillMoves board White (getPieces board WP 0 0 0 0 4 4)) in
+             if (validMoves /= [])
+                then return $ Just [((head validMoves))]
+                else let validMoves = (getEmptyMoves board White) in
+                     if (validMoves /= [])
+                        then return $ Just [(fromJust (chooseRandomMove validMoves))]
+                        else return Nothing
+
+offensive board Normal Black =
+     let validMoves = (checkKillMoves board Black (getPieces board BK 0 0 0 0 4 4)) in
+     if (validMoves /= [])
+        then return $ Just [((head validMoves))]
+        else let validMoves = (checkKillMoves board Black (getPieces board BP 0 0 0 0 4 4)) in
+             if (validMoves /= [])
+                then return $ Just [((head validMoves))]
+                else let validMoves = (getEmptyMoves board Black) in
+                     if (validMoves /= [])
+                        then return $ Just [(fromJust (chooseRandomMove validMoves))]
+                        else return Nothing
+
      
-     
-offensive gameState PawnPlacement player =
-  let emptyPlaces = pieces (theBoard gameState) E 0 0 0 1 4 3 in
-  let move = chooseMove emptyPlaces in
-  if move /= Nothing then
-    return $ Just [(fromJust move)]
-  else return Nothing
-     
-     
-{---------Movement options---------}
-     
--- | Takes in the board state and initial coordinates and returns a list of 
--- the optimal moves that will capture a piece
-killPlay :: Board -> [(Int, Int)] -> [((Int, Int), (Int, Int,))]
-killPlay b [] = []
-killPlay b (p:ps) | (idealKillPiece == Nothing) = (killPlay b ps)
-                  | (fromJust idealKillPiece Knight) = [(p, fromJust idealKill)] ++ killPlay b ps
-                  | (fromJust idealKillPiece Pawn) = killPlay b ps + [(p, fromJust idealKill)]
-                  where possibleKills = totalKills b p
-                        idealKill = chooseRandomMove (capture b possibleKills) 0.5
-                        idealKillPiece | (idealKill == Nothing) = Nothing
-                                       | otherwise = Just $ typeOf (pieceOf (getFromBoard b (fromJust idealKill)))
-                           
-                           
-                           
--- | Puts a list of captures available in order of importance (Knight over Pawn)
-capture :: Board -> [(Int, Int)] -> [(Int, Int)]
-capture board [] = []
-capture board (k:ks) | (piece == Knight) = [k] ++ (capture board ks)
-                     | (piece == Pawn) = (capture board ks) ++ [k]
-                     where piece = typeOf (pieceOf (getFromBoard board k))
+offensive board PawnPlacement player =
+     let move = chooseRandomMove (getPieces board E 0 0 0 1 4 3) in
+     if (move == Nothing)
+        then return Nothing
+        else return $ Just [(fromJust move)]
+
+checkKillMoves :: GameState -> Player -> [(Int, Int)] -> [(Int, Int)]
+checkKillMoves board player [] = []
+checkKillMoves board player (op:ops) = if ((getFromBoard (theBoard board) op == WK) || (getFromBoard (theBoard board) op == BK))
+                                          then (checkKill board player knightOffset op) ++ (checkKillMoves board player ops)
+                                          else (checkKill board player aggroPawnOffset op) ++ (checkKillMoves board player ops)
                      
-         
--- | Takes in the board state and initial coordinates and returns a list of 
--- the optimal moves that will not capture a piece       
-noKillPlay :: Board -> [(Int, Int)] -> [((Int, Int), (Int, Int,))]
-noKillPlay b [] = []
-noKillPlay b (p:ps) | (best == Nothing) = (noKillPlay b ps)
-                    | otherwise = (p, fromJust best) : (noKillPlay b ps)
-                    where movesList = noKill b p
-                          best = chooseRandomMove (noKill b moves) 0.5
-                          
--- | Simply a placeholder method because this strategy only tries to capture pieces
--- so there is no need to order the non-capture moves, simply pick one and continue
-noKill :: Board -> [(Int, Int)] -> [(Int, Int)]
-noKill b ps = ps
+checkKill :: GameState -> Player -> [(Int, Int)] -> (Int, Int) -> [(Int, Int)]
+checkKill board player [] _ = []
+checkKill board player (off:offs) op | (check == WK) && (player == Black) = move : checkKill board player offs op
+                                     | (check == BK) && (player == White) = move : checkKill board player offs op
+                                     | (check == WP) && (player == Black) = checkKill board player offs op ++ [move]
+                                     | (check == BP) && (player == White) = checkKill board player offs op ++ [move]
+                                     | otherwise = checkKill board player offs op
+                                     where move = (addPair op off)
+                                           check = (getFromBoard (theBoard board) move)
+
+getEmptyMoves :: GameState -> Player -> [(Int, Int)]
+getEmptyMoves board White = (goodMoves board knightOffset (getPieces board WK 0 0 0 0 4 4)) ++ (goodMoves board [(1, 1)] (getPieces board WP 0 0 0 0 4 4))
+getEmptyMoves board Black = (goodMoves board knightOffset (getPieces board BK 0 0 0 0 4 4)) ++ (goodMoves board [(1, 1)] (getPieces board BP 0 0 0 0 4 4))
+
+goodMoves :: GameState -> [(Int, Int)] -> [(Int, Int)] -> [(Int, Int)]
+goodMoves board offsets [] = []
+goodMoves board offsets (op:ops) = (possMove board offsets op) ++ (goodMoves board offsets ops)
+
+possMove :: GameState -> [(Int, Int)] -> (Int, Int) -> [(Int, Int)]
+possMove board (off:offs) op | (check == E) = move : possMove board offs op
+                             | otherwise = possMove board offs op
+                             where move = (addPair op off)
+                                   check = (getFromBoard (theBoard board) move)
+
+addPair :: (Int, Int) -> (Int, Int) -> (Int, Int)
+addPair one two = ((fst one + fst two), (snd one + snd two))
+
+getPieces :: GameState -> Cell -> Int -> Int -> Int -> Int -> Int -> Int -> [(Int, Int)]
+getPieces board c x y xmin ymin xmax ymax | (x == xmax && y == ymax) = if ((getFromBoard (theBoard board)) (xmax, ymax)) == c 
+                                                                       then (x, y) : [] 
+                                                                       else []
+                                       | (x == xmax) = if ((getFromBoard (theBoard board)) (xmax, y)) == c 
+                                                          then (xmax, y) : getPieces board c xmin (y + 1) xmin ymin xmax ymax 
+                                                          else getPieces board c xmin (y + 1) xmin ymin xmax ymax
+                                       | otherwise = if ((getFromBoard (theBoard board)) (x, y)) == c 
+                                                        then (x, y) : getPieces board c (x + 1) y xmin ymin xmax ymax 
+                                                        else getPieces board c (x + 1) y xmin ymin xmax ymax
+     
+chooseRandomMove :: [(Int, Int)] -> Maybe (Int, Int)
+chooseRandomMove [] = Nothing
+chooseRandomMove ops = let i = unsafePerformIO(getStdRandom(randomR(0, length ops))) in
+                               Just(ops !! i)

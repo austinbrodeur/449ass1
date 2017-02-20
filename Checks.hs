@@ -3,30 +3,51 @@
 module Checks (
     PlayerPieces,
     knightValid,
-    aggroPawnValid,
     passivePawnValid,
     capture,
+    allPiecesOfType,
     checkPromotion,
     promoMoveValid,
+    knightOffset,
     count,
+    getFourthCor,
+    getFirstCor,
+    iterCor,
     checkEndGame,
     allPawnsCaptured,
+    checkPawnPos,
+    checkPPOK,
     twoPenalties,
     checkBothPass,
     checkIfEmpty,
+    aggroPawnOffset2,
     checkIfOwned,
+    checkValidM,
+    isInBoundsForMoves,
+    checkKM,
+    checkPM,
+    checkBP,
+    checkWP,
+    checkGameEnd,
     bothPass, splitInts, checkLen, greaterFour, lesserZero, checkGreater, checkLesser) where
 
 import ApocTools
+import System.IO.Unsafe
+import System.Random
+import Data.Maybe (fromJust, isNothing)
 
 type PlayerPieces = [Cell]
 
 whiteGoons = [WP, WK]
 blackGoons = [BP, BK]
 
+pawn = [WP, BP]
+knight = [WK, BK]
+
 --Offsets for knight and pawn
 knightOffset = [(1,2), (1,-2), (-1,2), (-1,-2), (2,1), (-2,1), (2,-1), (-2,-1)]
-aggroPawnOffset = [(1, 1), (-1, 1)]
+
+aggroPawnOffset2 = [(1,1), (-1,1)]
 
 --Checks if chosen cell is an empty
 checkIfEmpty :: Board -> Int -> Int -> Bool
@@ -43,19 +64,27 @@ checkIfOwned b p x y | p == White = if (getFromBoard b (x, y) `elem` whiteGoons)
 					    then True
 				   	    else False
 
---Checks if knight movement is valid
+
+
+checkPlayerType :: Board -> (Int, Int) -> Player
+checkPlayerType b pos = if ((getFromBoard b pos) `elem` whiteGoons)
+					    then White
+					    else Black
+		     
+--Checks if knight mment is valid
 knightValid :: [Int] -> Bool
 knightValid (a:b:c:d:s) = elem ((a - c), (b - d)) knightOffset
 
---Checks if pawn movement is valid when capturing
+{-
+--Checks if pawn mment is valid when capturing
 aggroPawnValid :: Board -> [Int] -> Bool
-aggroPawnValid board (a:b:c:d:s) = (elem ((a - c), (b - d)) aggroPawnOffset) && checkValidCapture board (c, d)
-
+aggroPawnValid br (a:b:c:d:s) = (elem ((a - c), (b - d)) aggroPawnOffset) && checkValidCapture br (c, d)
+-}
 --Checks if the cell to capture is not empty
 checkValidCapture :: Board -> (Int, Int) -> Bool
 checkValidCapture b op = ((getFromBoard b op) /= E)
 
---Checks if pawn movement is valid when not capturing
+--Checks if pawn mment is valid when not capturing
 passivePawnValid :: [Int] -> Bool
 passivePawnValid (a:b:c:d:s) = (((a - c), (b - d)) == (0, 1))
 
@@ -86,10 +115,10 @@ checkPromotion p cs | p == White = if ((count WK cs) >= 2)
 				      else True
 
 {-Checks if the player input after reaching other side (without promotion) is valid.
- PARAMETER the board
+ PARAMETER the b
  PARAMETER the xy coordinates
  RETURNS True or False
- If true, then the pawn can be moved to the new location.
+ If true, then the pawn can be md to the new location.
  If false, prompt for new xy or punish? -}
 promoMoveValid :: Board -> (Int, Int) -> Bool
 promoMoveValid b p | ((b !! fst p) !! snd p) == E = True
@@ -102,17 +131,17 @@ count x (b:bs) | x == b    = 1 + count x bs
 	       | otherwise = count x bs
 
 
-{- Methods used by both AI strategies to determine moves
--}
--- | Choose a random move from a list. Moves are weighted towards the front of the list 
+{- Methods used by both AI strategies to determine ms
+
+-- | Choose a random m from a list. Moves are weighted towards the front of the list 
 chooseRandomMove :: [a] -> Float -> Maybe a
 chooseRandomMove [] f = Nothing
 chooseRandomMove (x:[]) f = Just x
 chooseRandomMove (x:xs) f | rand <= f = Just x
-                            | otherwise chooseRandomMove xs f
-  			  where rand = unsafePerformIO (random IO :: IO Float)  
+                          | otherwise = chooseRandomMove xs f
+  			  where rand = unsafePerformIO (randomIO :: IO Float)  
  			  
--- | Choose a random move from a list		  
+-- | Choose a random m from a list		  
 chooseMove :: [a] -> Maybe a
 chooseMove [] = Nothing
 chooseMove xs = Just (xs !! index)
@@ -120,76 +149,171 @@ chooseMove xs = Just (xs !! index)
 		  
 -- |Returns whether a position is safe or not
 safeTile :: Board -> Player -> (Int, Int) -> Bool
-safeTile b player p = tileSafeFromCapture (allPlayerMoves b (otherPlayer player)) p
+safeTile b player p = tileSafeFromCapture (allPossibleMoves b (otherPlayer player)) p
 
 -- |Returns whether a position is safe from being captured
 tileSafeFromCapture :: [(Int, Int)] -> (Int, Int) -> Bool
 tileSafeFromcapture [] pos = True
 tileSafeFromCapture (m:ms) pos | (m == pos) = False
                                    | otherwise = tileSafeFromCapture ms pos
- 				   
--- |Returns all possible moves
+				   
+-- |Returns all possible ms
 allPossibleMoves :: Board -> Player -> [(Int, Int)]
-allPossibleMoves board player = allMoves board (allPiecesOfType board player Knight) ++ allMoves board (allPiecesOfType board player Pawn)
+allPossibleMoves b player = allMoves b (allPiecesOfType b player "Knight") ++ allMoves b (allPiecesOfType b player "Pawn")
  
--- |Returns a list of all possible moves from a specific position
+
+-- |Returns a list of all possible ms from a specific position
 allMoves :: Board -> [(Int, Int)] -> [(Int, Int)]
-allMoves board [] = []
-allMoves board (p:ps) = getMoves2 board p False ++ allMoves board ps
-  
--- |Returns a list of all pieces on the board
+allMoves b [] = []
+allMoves b (p:ps) = getMoves2 b p False ++ allMoves b ps
+ -} 
+-- |Returns a list of all pieces on the b
 allPieces :: Board -> Player -> [(Int, Int)]
-allPieces b p = (allPiecesOfType b p Knight) ++ (allPiecesOfType b p Pawn)
+allPieces br p = (allPiecesOfType br p "Knight") ++ (allPiecesOfType br p "Pawn")
   
--- |Returns a list of all the specified player's pieces on the board 
-allPiecesOfType :: Board -> Player -> PieceType -> [(Int, Int)]
-allPiecesOfType b p t | (p == White && t == Knight) = pieces b WK 0 0 0 0 4 4
-                      | (p == White && t == Pawn)   = pieces b WP 0 0 0 0 4 4
-                      | (p == Black && t == Knight) = pieces b BK 0 0 0 0 4 4
-                      | (p == Black && t == Pawn)   = pieces b BP 0 0 0 0 4 4
+allPiecesOfType :: Board -> Player -> String -> [(Int, Int)]
+allPiecesOfType b p pt | (p == Black && pt == "Knight") = pieces b BK 0 0 0 0 4 4
+                       | (p == Black && pt == "Pawn")   = pieces b BP 0 0 0 0 4 4 
+                       | (p == White && pt == "Knight") = pieces b WK 0 0 0 0 4 4
+                       | (p == White && pt == "Pawn")   = pieces b WP 0 0 0 0 4 4
+ 
   
--- |Returns a list of all the pieces on the board of a specific cell type
+-- |Returns a list of all the pieces on the b of a specific cell type
 pieces :: Board -> Cell -> Int -> Int -> Int -> Int -> Int -> Int -> [(Int, Int)]
 pieces b p x y minx miny maxx maxy | (x == maxx && y == maxy) = if (getFromBoard b (maxx, maxy)) == p then (x, y) : [] else []
                                    | (x == maxx) = if (getFromBoard b (maxx, y)) == p then (maxx, y) : pieces b p minx (y + 1) minx miny maxx maxy else pieces b p minx (y + 1) minx miny maxx maxy
                                    | otherwise = if (getFromBoard b (x, y)) == p then (x, y) : pieces b p (x + 1) y minx miny maxx maxy else pieces b p (x + 1) y minx miny maxx maxy
-  
--- |Returns a list of moves from a piece, no capture
+{-
+-- |Returns a list of ms from a piece, no capture
 getMoves :: Board -> (Int, Int) -> Bool -> [(Int, Int)]
-getMoves b pos valid | (piece == Knight) = moves b knightMoves pos (length knightMoves) valid
-                     | (piece == Pawn)   = moves b pawnMoves pos (length pawnMoves) valid
-                     where piece = typeOf (pieceOf (getFromBoard b pos))
-                           player = playerOf (pieceOf (getFromBoard b pos))
-                           knightMoves = getKnightMoves
-                           pawnMoves = getPawnMoves player False
-  
--- |Returns a list of moves from a piece, capture
+getMoves b pos valid | (checkPieceType b pos == "Knight") = ms b knightMoves pos (length knightMoves) valid
+                     | (checkPieceType b pos ==  "Pawn")   = ms b pawnMoves pos (length pawnMoves) valid
+                     where knightMoves = allPossibleMovesKnight b (checkPlayerType b pos)
+                           pawnMoves = allPossibleMovesPawn b (checkPlayerType b pos)
+
+-- |Returns a list of ms from a piece, capture
 getMoves2 :: Board -> (Int, Int) -> Bool -> [(Int, Int)]
-getMoves2 b pos valid | (piece == Knight) = moves b knightMoves pos (length knightMoves) valid
-                      | (piece == Pawn)   = moves b pawnMoves pos (length pawnMoves) valid
-                      where piece = typeOf (pieceOf (getFromBoard b pos))
-                            player = playerOf (pieceOf (getFromBoard b pos))
-                            knightMoves = getKnightMoves
-                            pawnMoves = getPawnMoves player True
- 
+getMoves2 b pos valid | (checkPieceType b pos == "Knight") = ms b knightMoves pos (length knightMoves) valid
+                      | (checkPieceType b pos ==  "Pawn")   = ms b pawnMoves pos (length pawnMoves) valid
+                      where knightMoves = allPossibleMovesKnight b (checkPlayerType b pos)
+                            pawnMoves = allPossibleMovesPawn b (checkPlayerType b pos)
+
 -- | Moves a piece can make
-moves :: Board -> [(Int, Int)] -> (Int, Int) -> Int -> Bool -> [(Int, Int)]
-moves b m p 0 valid = []
-moves b (m:ms) pos index valid | (valid && isInBounds pos && isInBounds to && getFromBoard b to == E) = to : (moves b ms pos (index - 1) valid)
-                               | ((not valid) && isInBounds pos && isInBounds to) = to : (moves b ms pos (index - 1) valid)
-                               | otherwise = moves b ms pos (index - 1) valid
+ms :: Board -> [(Int, Int)] -> (Int, Int) -> Int -> Bool -> [(Int, Int)]
+ms b m p 0 valid = []
+ms b (m:ms) pos index valid | (valid && isInBounds pos && isInBounds to && getFromBoard b to == E) = to : (ms b ms pos (index - 1) valid)
+                               | ((not valid) && isInBounds pos && isInBounds to) = to : (ms b ms pos (index - 1) valid)
+                               | otherwise = ms b ms pos (index - 1) valid
                                where to = (fst pos + fst m, snd pos + snd m)
-  			       
--- |Check if the move is within the bounds of the board
+ -} 			       
+-- |Check if the m is within the bounds of the b
 isInBounds      :: (Int, Int) -> Bool
-isInBounds move | a>4 = False
+isInBounds m | a>4 = False
 		| b>4 = False
                 | a<0 = False
                 | b<0 = False
                 | otherwise = True
-                where a = fst move
-                       b = snd move
+                where a = fst m
+                      b = snd m
 
+otherPlayer :: Player -> Player
+otherPlayer Black = White
+otherPlayer White = Black
+
+checkValidM     :: Maybe[(Int, Int)] -> Player -> GameState -> Bool
+checkValidM Nothing p b = True
+checkValidM m p b =  
+    if isInBoundsForMoves m then
+        if cell1==E || (p == White && (cell1==BK || cell1==BP)) || (p == Black && (cell1==WK || cell1==WP))
+            then False
+            else if (cell1==BK || cell1==WK) then checkKM m b else checkPM m p b
+    else False
+    where cell1 = (getFromBoard (theBoard b) ((fromJust m) !! 0))
+
+isInBoundsForMoves      :: Maybe[(Int, Int)] -> Bool
+isInBoundsForMoves m 
+                 | ff>4 = False
+                 | ff<0 = False
+                 | fs>4 = False
+                 | fs<0 = False
+                 | sf>4 = False
+                 | sf<0 = False
+                 | ss>4 = False
+                 | ss<0 = False
+                 | otherwise = True
+                 where ff = fst ((fromJust m) !! 0)
+                       fs = snd ((fromJust m) !! 0)
+                       sf = fst ((fromJust m) !! 1)
+                       ss = snd ((fromJust m) !! 1)    
+    
+ 
+checkKM :: Maybe[(Int,Int)] -> GameState -> Bool
+checkKM km b | cell1 == E = False
+                                   | (abs fv == 2 && abs sv == 1) || (abs fv == 1 && abs sv == 2) = True
+                                   | dtp /= E && stp /= E && playerOf (pieceOf dtp) == playerOf(pieceOf(stp)) = False
+                                   | otherwise = False
+                                    where cell1 = (getFromBoard (theBoard b) ((fromJust km) !! 0))
+                                          stp = (getFromBoard (theBoard b) ((fromJust km) !! 0))
+                                          dtp = (getFromBoard (theBoard b) ((fromJust km) !! 1))
+                                          fv = fst ((fromJust km) !! 0) - fst ((fromJust km) !! 1)
+                                          sv = snd ((fromJust km) !! 0) - snd ((fromJust km) !! 1)
+
+checkPM :: Maybe[(Int,Int)] -> Player -> GameState -> Bool
+checkPM pm p b | p == Black = checkBP pm b
+               | p == White = checkWP pm b
+
+checkBP :: Maybe[(Int,Int)] -> GameState -> Bool
+checkBP pm b | (fv == 0 && sv == 1 && edge == E) = True
+             | (fv == 1 && sv == 1 && edge /= E && playerOf (pieceOf edge) /= Black) = True 
+             | (fv == -1 && sv == 1 && edge /= E && playerOf (pieceOf edge) /= Black) = True
+             | otherwise = False
+             where edge = (getFromBoard (theBoard b) ((fromJust pm) !! 1))
+                   fv = fst ((fromJust pm) !! 0) - fst ((fromJust pm) !! 1)
+                   sv = snd ((fromJust pm) !! 0) - snd ((fromJust pm) !! 1)
+
+checkWP :: Maybe[(Int,Int)] -> GameState -> Bool
+checkWP pm b | (fv == 0 && sv == -1 && edge == E) = True
+             | (fv == 1 && sv == -1 && edge /= E && playerOf (pieceOf edge) /= White) = True 
+             | (fv == -1 && sv == -1 && edge /= E && playerOf (pieceOf edge) /= White) = True
+             | otherwise = False
+              where edge = (getFromBoard (theBoard b) ((fromJust pm) !! 1))
+                    fv = fst ((fromJust pm) !! 0) - fst ((fromJust pm) !! 1)
+                    sv = snd ((fromJust pm) !! 0) - snd ((fromJust pm) !! 1)
+
+                    
+checkGameEnd :: GameState -> Bool
+checkGameEnd b | (whitePen b) >= 2 ||(blackPen b) >= 2 = True 
+checkGameEnd b =  if (elem '+' (board2Str (theBoard b))) && (elem '/' (board2Str (theBoard b)))
+                    then False
+                    else True                    
+                    
+                
+iterCor :: [Cell] -> Piece -> IO Bool
+iterCor [] pc = return False
+iterCor (x:xs) pc = if (x /= E && (pieceOf x) == pc) 
+    then return True
+    else iterCor xs pc
+
+getFirstCor :: Board -> [Cell]
+getFirstCor (x:xs) = x
+
+getFourthCor :: Board -> [Cell]
+getFourthCor (x:xs:xss:xsss:xssss:[]) = xssss
+                   
+                    
+                    
+                    
+                    
+                    
+                    {-                          
+checkPPOK :: Maybe [(Int, Int)] -> GameState -> Bool
+checkPPOK m state | m == Nothing = True
+                                | getFromBoard (theBoard state) ((fromJust m) !! 0) == E = True
+                                | otherwise = False
+
+
+-}
+ 
 
 
 --Victory/Loss conditions
@@ -220,6 +344,7 @@ checkEndGame b whitePieces blackPieces = let winner = allPawnsCaptured whitePiec
 			  else winner
 		  else winner
 
+          
 --First victory condition: Returns the winner, or nothing if both still have pawns.
 allPawnsCaptured :: PlayerPieces -> PlayerPieces -> Maybe Player
 allPawnsCaptured w b | (elem WP w) && (not (elem BP b)) = Just White
@@ -243,15 +368,24 @@ bothPass :: PlayerPieces -> PlayerPieces -> Player
 bothPass w b | count WP w > count BP b = White
 	     | count WP w < count BP b = Black
 	     | otherwise = White
-
+         
+checkPawnPos :: [Cell] -> Piece -> Int -> Int -> (Int,Int)
+checkPawnPos [] pc xCor yCor = (-1,-1)
+checkPawnPos (x:xs) pc xCor yCor = if (x /= E && (pieceOf x) == pc) 
+    then (xCor,yCor)
+    else checkPawnPos xs pc (xCor+1) yCor        
+         
+checkPPOK :: Maybe [(Int, Int)] -> GameState -> Bool
+checkPPOK m b | m == Nothing = True
+              | getFromBoard (theBoard b) ((fromJust m) !! 0) == E = True
+              | otherwise = False
 ----------------------------------------------------------------------------------------------------
-
 
 -- Gets input for the human turn and splits to input into ints. Used to do checkLen.
 splitInts :: IO [Int]
 splitInts = fmap (map read.words) getLine
 
--- Checks to make sure the user for the human strategy enters in four integer arguments to move. Will reprompt with an error message if they enter invalid input.
+-- Checks to make sure the user for the human strategy enters in four integer arguments to m. Will reprompt with an error message if they enter invalid input.
 checkLen :: IO [Int]
 checkLen = do
   ints <- splitInts
@@ -281,6 +415,15 @@ checkLesser (x:xs)
   | lesserZero x = checkLesser xs
   | otherwise    = True
 
+checkPieceType :: Board -> (Int, Int) -> String
+checkPieceType b pos = if ((getFromBoard b pos) `elem` pawn)
+			    then "Pawn"
+			    else "Knight"
+{-		
+allPossibleMovesKnight :: Board -> Player -> [(Int, Int)]
+allPossibleMovesKnight b player = allMoves b (allPiecesOfType b player "Knight")
 
-
-
+allPossibleMovesPawn :: Board -> Player -> [(Int, Int)]
+allPossibleMovesPawn b player = allMoves b (allPiecesOfType b player "Pawn")
+ 
+ -}
