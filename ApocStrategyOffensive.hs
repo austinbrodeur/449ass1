@@ -98,7 +98,4 @@ getPieces board c x y xmin ymin xmax ymax | (x == xmax && y == ymax) = if ((getF
      
 chooseRandomMove :: [(Int, Int)] -> Maybe (Int, Int)
 chooseRandomMove [] = Nothing
-chooseRandomMove ops = if ((length ops) == 1)
-                          then Just (head ops)
-                          else let i = unsafePerformIO(randomIO (0, (length ops) -1)) in
-                               Just(ops !! i)
+chooseRandomMove (op:ops) = Just (op)
