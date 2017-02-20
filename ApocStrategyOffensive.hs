@@ -98,5 +98,5 @@ getPieces board c x y xmin ymin xmax ymax | (x == xmax && y == ymax) = if ((getF
      
 chooseRandomMove :: [(Int, Int)] -> Maybe (Int, Int)
 chooseRandomMove [] = Nothing
-chooseRandomMove ops = let i = unsafePerformIO(getStdRandom(randomR(0, length ops))) in
+chooseRandomMove ops = let i = unsafePerformIO(getStdRandom(randomR(0, ((length ops) - 1)))) in
                                Just(ops !! i)
