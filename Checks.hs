@@ -29,7 +29,7 @@ module Checks (
     checkBP,
     checkWP,
     checkGameEnd,
-    fromIntegerPair,
+    fromIntegerPairList,
     bothPass, splitInts, checkLen, greaterFour, lesserZero, checkGreater, checkLesser) where
 
 import ApocTools
@@ -39,8 +39,9 @@ import Data.Maybe (fromJust, isNothing)
 
 type PlayerPieces = [Cell]
 
-fromIntegerPair :: (Integer, Integer) -> (Int, Int)
-fromIntegerPair (x, y) = ((fromIntegral x) , (fromIntegral y))
+fromIntegerPairList :: [(Integer, Integer)] -> [(Int, Int)]
+fromIntegerPairList [] = []
+fromIntegerPairList ((x, y):ops) = ((fromIntegral x), (fromIntegral y)) : fromIntegerPairList ops
 
 whiteGoons = [WP, WK]
 blackGoons = [BP, BK]
