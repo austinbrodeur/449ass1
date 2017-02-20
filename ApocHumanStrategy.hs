@@ -22,7 +22,6 @@ Apocalypse game.  It has VERY little functionality.
 module ApocStrategyHuman where
 
 import ApocTools
---import Control.Monad.Trans.State.Lazy
 import System.IO.Unsafe
 import Data.Maybe (fromJust, isNothing)
 import Data.Char
