@@ -21,14 +21,14 @@ import System.Random
 defensive :: Chooser
 -- * Game state based on a normal play, which would be moving a knight.  
 defensive board Normal White =
-    let move = chooseRandomMove ((validMoves board White knightOffset (getPieces board WK 0 0 0 0 4 4)) ++ (validMoves board White ((1,1) : aggroPawnOffset2) (getPieces board WP 0 0 0 0 4 4))) in
+    let move = chooseRandomMove ((validMoves board White knightOffset (getPieces board WK 0 0 0 0 4 4)) ++ (validMoves board White (fromIntegerPairList ((1,1) : aggroPawnOffset2)) (getPieces board WP 0 0 0 0 4 4))) in
     
     if (move == Nothing)
        then return Nothing
        else return $ Just [(fromJust move)]
       
 defensive board Normal Black =
-    let move = chooseRandomMove ((validMoves board Black knightOffset (getPieces board BK 0 0 0 0 4 4)) ++ (validMoves board Black ((1,1) : aggroPawnOffset2) (getPieces board BP 0 0 0 0 4 4))) in
+    let move = chooseRandomMove ((validMoves board Black knightOffset (getPieces board BK 0 0 0 0 4 4)) ++ (validMoves board Black (fromIntegerPairList ((1,1) : aggroPawnOffset2)) (getPieces board BP 0 0 0 0 4 4))) in
     
     if (move == Nothing)
        then return Nothing
