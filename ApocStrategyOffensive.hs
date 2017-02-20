@@ -56,7 +56,7 @@ checkKillMoves :: GameState -> Player -> [(Int, Int)] -> [(Int, Int)]
 checkKillMoves board player [] = []
 checkKillMoves board player (op:ops) = if ((getFromBoard (theBoard board) op == WK) || (getFromBoard (theBoard board) op == BK))
                                           then (checkKill board player knightOffset op) ++ (checkKillMoves board player ops)
-                                          else (checkKill board player aggroPawnOffset op) ++ (checkKillMoves board player ops)
+                                          else (checkKill board player (fromIntegerPairList (aggroPawnOffset)) op) ++ (checkKillMoves board player ops)
                      
 checkKill :: GameState -> Player -> [(Int, Int)] -> (Int, Int) -> [(Int, Int)]
 checkKill board player [] _ = []
