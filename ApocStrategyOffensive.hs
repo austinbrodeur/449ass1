@@ -77,6 +77,7 @@ goodMoves board offsets [] = []
 goodMoves board offsets (op:ops) = (possMove board offsets op) ++ (goodMoves board offsets ops)
 
 possMove :: GameState -> [(Int, Int)] -> (Int, Int) -> [(Int, Int)]
+possMove board [] op = []
 possMove board (off:offs) op | (check == E) = move : possMove board offs op
                              | otherwise = possMove board offs op
                              where move = (addPair op off)
