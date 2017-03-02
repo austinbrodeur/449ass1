@@ -47,6 +47,7 @@ validMoves board player _ [] = []
 validMoves board player offsets (op:ops) = (goodMoves board player offsets op) ++ (validMoves board player offsets ops)
 
 goodMoves :: GameState -> Player -> [(Int, Int)] -> (Int, Int) -> [(Int, Int)]
+goodMoves board player [] op = []
 goodMoves board player (off:offs) op | (check == WP) && (player == White) = goodMoves board player offs op
                                      | (check == WK) && (player == White) = goodMoves board player offs op
                                      | (check == BP) && (player == Black) = goodMoves board player offs op
