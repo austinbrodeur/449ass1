@@ -19,10 +19,10 @@ Apocalypse game.  It has VERY little functionality.
 
 module ApocStrategyHuman where
 
-import ApocTools
 import System.IO.Unsafe
 import Data.Maybe (fromJust, isNothing)
 import Data.Char
+import ApocTools
 
 {- human strategy takes input from user and parses to return an IO(Maybe[(Int, Int)]). -}
 human    :: Chooser

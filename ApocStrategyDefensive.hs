@@ -9,26 +9,26 @@ checks and different weight on safer moves.
 
 module ApocStrategyDefensive where
 
+import System.Environment
 import Control.Monad.Trans.State.Lazy
 import Data.Maybe (fromJust, isNothing)
 import Data.Char
-import System.IO.Unsafe
-import System.Environment
-import ApocTools
-import Checks
 import System.Random
+import System.IO.Unsafe
+import ApocTools
+import Util
 
 defensive :: Chooser
 -- * Game state based on a normal play, which would be moving a knight.  
 defensive board Normal White =
-    let move = chooseRandomMove ((validMoves board White knightOffset (getPieces board WK 0 0 0 0 4 4)) ++ (validMoves board White (fromIntegerPairList ((1,1) : aggroPawnOffset2)) (getPieces board WP 0 0 0 0 4 4))) in
+    let move = chooseRandomMove ((validMoves board White (fromIntegerPairList knightOffset) (getPieces (theBoard board) WK 0 0 0 0 4 4)) ++ (validMoves board White (fromIntegerPairList ((1,1) : aggroPawnOffset)) (getPieces (theBoard board) WP 0 0 0 0 4 4))) in
     
     if (move == Nothing)
        then return Nothing
        else return $ Just [(fromJust move)]
       
 defensive board Normal Black =
-    let move = chooseRandomMove ((validMoves board Black knightOffset (getPieces board BK 0 0 0 0 4 4)) ++ (validMoves board Black (fromIntegerPairList ((1,1) : aggroPawnOffset2)) (getPieces board BP 0 0 0 0 4 4))) in
+    let move = chooseRandomMove ((validMoves board Black (fromIntegerPairList knightOffset) (getPieces (theBoard board) BK 0 0 0 0 4 4)) ++ (validMoves board Black (fromIntegerPairList ((1,1) : aggroPawnOffset)) (getPieces (theBoard board) BP 0 0 0 0 4 4))) in
     
     if (move == Nothing)
        then return Nothing
@@ -36,7 +36,7 @@ defensive board Normal Black =
     
 -- * Game state based on a pawn move
 defensive board PawnPlacement player =
-     let move = chooseRandomMove (getPieces board E 0 0 0 1 4 3) in
+     let move = chooseRandomMove (getPieces (theBoard board) E 0 0 0 1 4 3) in
      if (move == Nothing)
         then return Nothing
         else return $ Just [(fromJust move)]
@@ -55,21 +55,3 @@ goodMoves board player (off:offs) op | (check == WP) && (player == White) = good
                                      | otherwise = move : goodMoves board player offs op
                                      where move = (addPair op off)
                                            check = (getFromBoard (theBoard board) move)
-
-getPieces :: GameState -> Cell -> Int -> Int -> Int -> Int -> Int -> Int -> [(Int, Int)]
-getPieces board c x y xmin ymin xmax ymax | (x == xmax && y == ymax) = if ((getFromBoard (theBoard board)) (xmax, ymax)) == c 
-                                                                       then (x, y) : [] 
-                                                                       else []
-                                       | (x == xmax) = if ((getFromBoard (theBoard board)) (xmax, y)) == c
-                                                          then (xmax, y) : getPieces board c xmin (y + 1) xmin ymin xmax ymax 
-                                                          else getPieces board c xmin (y + 1) xmin ymin xmax ymax
-                                       | otherwise = if ((getFromBoard (theBoard board)) (x, y)) == c
-                                                        then (x, y) : getPieces board c (x + 1) y xmin ymin xmax ymax 
-                                                        else getPieces board c (x + 1) y xmin ymin xmax ymax
-
-addPair :: (Int, Int) -> (Int, Int) -> (Int, Int)
-addPair one two = ((fst one + fst two), (snd one + snd two))
-
-chooseRandomMove :: [(Int, Int)] -> Maybe (Int, Int)
-chooseRandomMove [] = Nothing
-chooseRandomMove (op:ops) = Just (op)

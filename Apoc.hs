@@ -19,50 +19,65 @@ Feel free to modify this file as you see fit.
 
 -}
 
-module Main (
+module Apoc (
       -- * Main
       main, main', 
-      -- * Utility functions
-      replace, replace2
+      
+      --Game Functions
+      intMode, getStrategy, checkModes, startGame,
+     
       ) where
 
-import Data.Maybe (fromJust, isNothing)
 import System.Environment
 import System.IO.Unsafe
+import Data.Char
+import Data.List
+import Data.Maybe (fromJust, isNothing)
+import ApocLoop
 import ApocTools
+import Util
 import ApocStrategyHuman
-import GameLoops
-
+import ApocStrategyOffensive
+import ApocStrategyDefensive
 
 ---Main-------------------------------------------------------------
 
 -- | The main entry, which just calls 'main'' with the command line arguments.
 main = main' (unsafePerformIO getArgs)
 
-{- | We have a main' IO function so that we can either:
-
-     1. call our program from GHCi in the usual way
-     2. run from the command line by calling this function with the value from (getArgs)
--}
-
-main'           :: [String] -> IO()
+main' :: [String] -> IO()
 main' [] = do intMode
 main' (x:y:xs) = do checkModes x y
 main' xs = do putStrLn stratsPrint
 
+-- Interactive mode. Shows strategies and gets user input.
+intMode :: IO()
+intMode = do
+  putStrLn $ "\nEnter one of the strategies following strategies for each challenger:\n" ++ 
+             "\nStrategies:\n  offensive\n  defensive\n  human\n"
+  putStrLn "Enter the black strategy: "
+  blackStrat <- getLine
+  putStrLn "Enter the white strategy: "
+  whiteStrat <- getLine
+  checkModes blackStrat whiteStrat
 
+--Gets the strategy from the String given.
+getStrategy :: String -> Chooser
+getStrategy name | (name == "human") = human
+                   | (name == "offensive") = offensive
+                   | (name == "defensive") = defensive
 
-
-
----2D list utility functions-------------------------------------------------------
-
--- | Replaces the nth element in a row with a new element.
-replace         :: [a] -> Int -> a -> [a]
-replace xs n elem = let (ys,zs) = splitAt n xs
-                     in (if null zs then (if null ys then [] else init ys) else ys)
-                        ++ [elem]
-                        ++ (if null zs then [] else tail zs)
-
--- | Replaces the (x,y)th element in a list of lists with a new element.
-replace2        :: [[a]] -> (Int,Int) -> a -> [[a]]
-replace2 xs (x,y) elem = replace xs y (replace (xs !! y) x elem)
+-- Checks if the input from either interactive mode or normal mode is correct and runs the game if it is.
+checkModes :: String -> String -> IO()
+checkModes blk wht = do
+   let bs = getStrategy blk
+   let ws = getStrategy wht
+   if (elem (blk) stratsList) && (elem (wht) stratsList)
+    then startGame bs blk ws wht
+    else putStrLn $ "human\n  offensive\n  defensive\n"
+  
+-- Starts the game off.
+startGame :: Chooser -> String -> Chooser -> String -> IO()
+startGame bs blk ws wht = do
+  print initBoard
+  gameLoop initBoard bs blk ws wht
